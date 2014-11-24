@@ -1,0 +1,84 @@
+<h1>{{title}}</h1>
+{{#if filename}}
+   <p>{{filename}}</p>
+{{/if}}
+   
+<form method='post' action='/' enctype="multipart/form-data">
+    <input type='file' name='fileUploaded'>
+    <input type='submit'>
+</form>
+
+<div id="map-canvas"></div>
+
+<script id="mapdata" type="application/json">
+    {{{mapdata}}}
+</script>
+
+<script type="text/javascript">
+function drawPolygons(map){
+  var polygons = [];
+  if ($("#mapdata").html()){
+    polygons = JSON.parse($("#mapdata").html());
+  }
+  
+  if (polygons){
+    var renderReadyPolygons = [];  
+    $.each(polygons, function (id, polygon){
+        var coords = [];
+        $.each(polygon.points, function (id, point){
+            coords.push(new google.maps.LatLng(point.latitude, point.longitude));
+          });
+        
+        renderReadyPolygons.push({
+            "name" : polygon.name,
+            "coords" : coords,
+            "polygon" : new google.maps.Polygon({
+                paths: coords,
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35
+              })});
+      });
+
+    $.each(renderReadyPolygons, function(ix, polygon){
+        polygon.polygon.setMap(map);
+        
+        //Define position of label
+        var bounds = new google.maps.LatLngBounds();
+        for (var i=0; i< polygon.coords.length; i++) {
+          bounds.extend(polygon.coords[i]);
+        }
+        
+        var myLatlng = bounds.getCenter();
+        
+        var mapLabel = new MapLabel({
+            text: polygon.name,
+            position: myLatlng,
+            map: map,
+            fontSize: 20,
+            align: 'left'
+          });
+      });
+      }     
+}
+
+function initialize() {    
+  //draw the map
+  var mapOptions = {
+    center: new google.maps.LatLng(59.74846, 10.24901),
+    zoom : 17,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  
+  var map = new google.maps.Map(document.getElementById('map-canvas'),
+                                mapOptions);
+
+  drawPolygons(map);
+  
+}    
+
+google.maps.event.addDomListener(window, 'load', initialize);
+</script>
+
