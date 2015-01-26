@@ -1,15 +1,76 @@
 var express = require('express');
 var router = express.Router();
-var xlsx = require('xlsx');
+var http = require('http');
+// var client = require('http');
+// var xlsx = require('xlsx');
 
 /* GET home page. */
 router.get('/', function(req, res) {    
-    res.render('index', { title: 'Upload the excel file please' });
+    res.render('index', { title: 'Enter VIN to see car history' });
     
 });
 
 router.post('/', function(req, res){
-    var polygons = [];
+    var vin = req.body.vin;
+    var actions = null;
+    if (vin != null && vin.length && vin.length > 0) {
+        var options = {
+            hostname: 'bou-ats-traci.prodno.osl.basefarm.net',
+            port: 8000,
+            path: '/ats/car/' + vin + '/action',
+            headers: {
+                'Authorization': 'Basic Q19OUDpEcmFtbWVuNjk='
+            }
+        };
+
+        //'http://bou-ats-traci.prodno.osl.basefarm.net:8000/ats/car/' + vin + '/action'
+
+        http.get(options, function(response) {
+            console.log("Got response: " + response.statusCode);
+            var body = '';
+            response.on('data', function(d) {
+                body += d;
+            });
+            response.on('end', function() {
+                debugger;
+                var parsed = JSON.parse(body);
+                actions = parsed;
+                res.render('index', {
+                    title : 'Displaying car history',
+                    mapdata : JSON.stringify(actions)
+                });
+            });
+        }).on('error', function(e) {
+            debugger;
+            console.log("Got error: " + e.message);
+        });
+    }
+    // var options = {
+    //     hostname: 'host.tld',
+    //     path: '/{uri}',
+    //     method: 'GET', //POST,PUT,DELETE etc
+    //     port: 80,
+    //     headers: {} //
+    // };
+
+    // pRequest    = client.request(options, function(response){
+    //     console.log("Code: "+response.statusCode+ "\n Headers: "+response.headers);
+    //     response.on('data', function (chunk) {
+    //         console.log(chunk);
+    //     });
+    //     response.on('end',function(){
+    //         console.log("\nResponse ended\n");
+    //     });
+    //     response.on('error', function(err){
+    //         console.log("Error Occurred: " + err.message);
+    //     });
+    // });
+
+    // var req = http.request(options, function(res) {
+    //     if (res.statusCode === 200)
+    // });
+
+/*    var polygons = [];
     
     var workbook = xlsx.readFile(req.files.fileUploaded.path);
     console.log(req.files.fileUploaded);
@@ -46,12 +107,12 @@ router.post('/', function(req, res){
         });
         
     });
-
-    res.render('index', {
-        title : 'Displaying',
-        filename : req.files.fileUploaded.originalname,
-        mapdata : JSON.stringify(polygons)
-    });
+*/
+    // res.render('index', {
+    //     title : 'Displaying car history',
+    //     // filename : req.files.fileUploaded.originalname,
+    //     mapdata : JSON.stringify(actions)
+    // });
     
 });
 

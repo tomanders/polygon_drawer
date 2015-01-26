@@ -3,11 +3,12 @@
    <p>{{filename}}</p>
 {{/if}}
    
-<!-- <form method='post' action='/' enctype="multipart/form-data">
-    <input type='file' name='fileUploaded'>
+<form method='post' action='/' enctype="multipart/form-data">
+  <input type="text" name="vin" id="vin" placeholder="Enter the car's VIN to see its history">
+    <!-- <input type='file' name='fileUploaded'> -->
     <input type='submit'>
 </form>
- -->
+
 <div id="map-canvas"></div>
 
 <script id="mapdata" type="application/json">
@@ -76,6 +77,48 @@ function drawPolygons(map, zones){
       }     
 }
 
+function drawHistory(map) {
+  var actions = null;
+  try {
+    actions = JSON.parse($("#mapdata").html());
+  } catch (e) {
+
+  }
+  if (actions != null && actions.length > 0) {
+      var infowin = new google.maps.InfoWindow();
+
+    for (var i = 0; i < actions.length; i++) {
+      var action = actions[i];
+      
+      var contentString = '<div>' +
+                            ((action.type) ? '<h1>Action ' + (i+1) + ': ' + action.type + '</h1>' : '<h1>Action ' + (i+1) + '</h1>') +
+                            ((action.user && action.user.name) ? '<p>User name: ' + action.user.name + '</p>' : '<p>No registered user</p>') +
+                            ((action.date) ? '<p>Executed @ ' + action.date + '</p>' : '<p>No date available</p>') +
+                            ((action.location && action.location.name) ? '<p>Zone name: ' + action.location.name + '</p>' : '<p>No known zone</p>') +
+                          '</div>';
+
+      // var infowindow = new google.maps.InfoWindow({
+      //   content: contentString
+      // });
+
+      var marker = new google.maps.Marker({
+          position: new google.maps.LatLng(action.location.latitude, action.location.longitude),
+          map: map,
+          title: action.type
+      });
+
+      google.maps.event.addListener(marker, 'click', (function(marker, content, infowindow) {
+            return function() {
+                infowindow.setContent(content);
+                infowindow.open(map, marker);
+            }
+        })(marker, contentString, infowin));
+
+    }
+  }
+
+}
+
 function initialize() {    
   //draw the map
   var mapOptions = {
@@ -88,6 +131,7 @@ function initialize() {
                                 mapOptions);
 
   getLocationData(map);
+  drawHistory(map);
   // drawPolygons(map);
   
 }    
